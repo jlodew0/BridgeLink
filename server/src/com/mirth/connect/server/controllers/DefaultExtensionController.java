@@ -706,32 +706,37 @@ public class DefaultExtensionController extends com.mirth.connect.server.control
     }
 
     void extractZipEntry(ZipEntry entry, File installTempDir, ZipFile zipFile) throws IOException {
-        String canonicalDestinationDirPath = installTempDir.getCanonicalPath();
-        File destinationfile = new File(installTempDir, entry.getName());
-        String canonicalDestinationFile = destinationfile.getCanonicalPath();
+    String canonicalDestinationDirPath = installTempDir.getCanonicalPath();
+    File destinationFile = new File(installTempDir, entry.getName());
+    String canonicalDestinationFile = destinationFile.getCanonicalPath();
 
-        if (!canonicalDestinationFile.startsWith(canonicalDestinationDirPath + File.separator)) {
-            throw new ZipException("Zip file is attempting to traverse out of base directory");
-        }
+    if (!canonicalDestinationFile.startsWith(canonicalDestinationDirPath + File.separator)) {
+        throw new ZipException("Zip file is attempting to traverse out of base directory");
+    }
 
-        if (entry.isDirectory()) {
-            destinationfile.mkdirs();
-        } else {
-            // otherwise, write the file out to the install temp dir
-            InputStream zipInputStream = null;
-            FileOutputStream fileOutputStream = null;
-            OutputStream outputStream = null;
-            try {
-                zipInputStream = zipFile.getInputStream(entry);
-                fileOutputStream = new FileOutputStream(destinationfile);
-                outputStream = new BufferedOutputStream(fileOutputStream);
-                IOUtils.copy(zipInputStream, outputStream);
-            } finally {
-                ResourceUtil.closeResourceQuietly(outputStream);
-                ResourceUtil.closeResourceQuietly(fileOutputStream);
-                ResourceUtil.closeResourceQuietly(zipInputStream);
+    if (entry.isDirectory()) {
+        destinationFile.mkdirs();
+    } else {
+        InputStream zipInputStream = null;
+        FileOutputStream fileOutputStream = null;
+        OutputStream outputStream = null;
+        try {
+            zipInputStream = zipFile.getInputStream(entry);
+
+            File parentDir = destinationFile.getParentFile();
+            if (parentDir != null) {
+                parentDir.mkdirs();
             }
+
+            fileOutputStream = new FileOutputStream(destinationFile);
+            outputStream = new BufferedOutputStream(fileOutputStream);
+            IOUtils.copy(zipInputStream, outputStream);
+        } finally {
+            ResourceUtil.closeResourceQuietly(outputStream);
+            ResourceUtil.closeResourceQuietly(fileOutputStream);
+            ResourceUtil.closeResourceQuietly(zipInputStream);
         }
     }
 }
+
 
